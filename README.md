@@ -1,1 +1,0 @@
-# Programming Collective Intelligence
