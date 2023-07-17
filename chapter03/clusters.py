@@ -260,41 +260,50 @@ def scale_down(
 ) -> list[list[float]]:
     n = len(data)
 
+    # n x n的相似性关系表
     real_dist = [[distance(data[i], data[j]) for j in range(n)] for i in range(0, n)]
 
-    loc = [[random.random(), random.random()] for i in range(n)]
-    fake_dist = [[0.0 for j in range(n)] for i in range(n)]
+    # n x 2
+    loc = [[random.random(), random.random()] for _ in range(n)]
+    # n x n，data[i]与data[j]的距离
+    fake_dist = [[0.0 for _ in range(n)] for _ in range(n)]
 
     last_error = None
-    for m in range(0, 1000):
+    for _ in range(0, 1000):
         for i in range(n):
             for j in range(n):
                 fake_dist[i][j] = sqrt(
                     sum([pow(loc[i][x] - loc[j][x], 2) for x in range(len(loc[i]))])
                 )
 
-        grad = [[0.0, 0.0] for i in range(n)]
+        # n x 2
+        grad = [[0.0, 0.0] for _ in range(n)]
 
         total_error = 0
-        for k in range(n):
+        # 这里i，j的顺序不太好理解，既然fake_dist[i][j] == fake_dist[j][i]，那么调换下顺序也无妨
+        # real_dist同理
+        for i in range(n):
             for j in range(n):
-                if j == k:
+                if j == i:
                     continue
-                error_term = (fake_dist[j][k] - real_dist[j][k]) / real_dist[j][k]
+                error_term = (fake_dist[i][j] - real_dist[i][j]) / real_dist[i][j]
 
-                grad[k][0] += (loc[k][0] - loc[j][0]) / fake_dist[j][k] * error_term
-                grad[k][1] += (loc[k][1] - loc[j][1]) / fake_dist[j][k] * error_term
+                # (x1 - x2) / d * diff
+                grad[i][0] += (loc[i][0] - loc[j][0]) / fake_dist[i][j] * error_term
+                # (y1 - y2) / d * diff
+                grad[i][1] += (loc[i][1] - loc[j][1]) / fake_dist[i][j] * error_term
 
                 total_error += abs(error_term)
+
         print(total_error)
 
         if last_error and last_error < total_error:
             break
         last_error = total_error
 
-        for k in range(n):
-            loc[k][0] -= rate * grad[k][0]
-            loc[k][1] -= rate * grad[k][1]
+        for i in range(n):
+            loc[i][0] -= rate * grad[i][0]
+            loc[i][1] -= rate * grad[i][1]
 
     return loc
 
